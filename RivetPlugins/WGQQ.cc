@@ -13,12 +13,14 @@
 #include "Rivet/Projections/PromptFinalState.hh"
 #include "Rivet/Projections/VetoedFinalState.hh"
 #include "fastjet/contrib/SoftDrop.hh"
+#include "Rivet/Projections/WFinder.hh"
+#include <cstdlib>
 namespace Rivet {
 
 class WGQQ : public Analysis {
 public:
   struct WGammaRivetVariables {
-    bool is_wg_gen;
+    bool w_flag;
 
     double fj_pt;
     double fj_eta;
@@ -41,14 +43,16 @@ public:
     double p0_phi;
     double p0_M;
 
-    double phi;
-    double phi_f;
-
+    double phi_quark;
+    double phi_sjet;
+    double phi_sjet_matched; //may be different from phi_sjet due to the jets order
     double wg_M;
+
+    double w_pt;
 
     WGammaRivetVariables() { resetVars(); }
     void resetVars() {
-      is_wg_gen = false;
+      w_flag = true;
       fj_pt = 0.;
       fj_eta = 0.;
       fj_phi = 0.;
@@ -69,10 +73,12 @@ public:
       j1_phi = 0.;
       j1_M = 0.;
 
-      phi = 0.;
-      phi_f = 0.;
-      
+      phi_quark = 0.;
+      phi_sjet = 0.;
+      phi_sjet_matched = 0.;
       wg_M = 0;
+
+      w_pt = 0.;
     }
   };
 
@@ -90,7 +96,7 @@ public:
     FourMomentum r_subjet2;
     FourMomentum r_photon;
 
-    WGSystem(PseudoJet const &j1, PseudoJet const &j2, Particle const &pho,
+    WGSystem(FourMomentum const &j1, FourMomentum const &j2, FourMomentum const &pho,
              bool verbose);
 
     double Phi();
@@ -131,94 +137,146 @@ public:
 
     // Booking of histograms
     book(_h["fjet_sdmass"], "fjet_sdmass", 18, 20, 200);
-    book(_h["sjet_phi"], "sjet_phi", 10, -PI, PI);
-    book(_h["sjet_phi_f"], "sjet_phi_f", 10, PI / 2., PI / 2.);
     book(_h["wg_mass"], "wg_mass", 50, 0, 2000);
     book(_h["p_pt"], "p_pt", 35, 200, 1500);
+    book(_h["p_pt_matched"], "p_pt_matched", 35, 200, 1500);
     book(_h["fjet_pt"], "fjet_pt", 35, 200, 1500);
-
+    book(_h["w_pt"], "w_pt", 40, 0, 1500);
+    book(_h["w_pt_matched"], "w_pt_matched", 40, 0, 1500);
+    book(_h["w_flag"], "w_flag", 2, 0, 2);
+    book(_h["phi_quark"], "phi_quark", 10, -PI, PI);
+    book(_h["phi_quark_matched"], "phi_quark_matched", 10, -PI, PI);
+    book(_h["phi_sjet"], "phi_sjet", 10, -PI, PI);
+    book(_h["phi_sjet_matched"], "phi_sjet_matched", 10, -PI, PI);
+    
   }
 
   /// Perform the per-event analysis
   void analyze(const Event &event) {
     vars_.resetVars();
+
     const Particles photons =
         applyProjection<FinalState>(event, "Photons").particlesByPt(Cuts:: pT > photon_pt_cut_*GeV && Cuts::abseta < photon_abs_eta_cut_);
 
-    if (photons.size() == 0) {
-      vetoEvent;
-    }
-    auto p0 = photons.at(0);
-
-    // Filter jets on pT, eta and DR with lepton and photon
-    const Jets fjets =
-        applyProjection<FastJets>(event, "FJets").jetsByPt([&](Jet const &j) {
-          return j.pt() > fatjet_pt_cut_ &&
-                 std::abs(j.eta()) < fatjet_abs_eta_cut_ &&
-                 deltaR(j, p0) > fatjet_dr_;
-        });
-    
-    fastjet::contrib::SoftDrop sd(0.0, 0.1, fatjet_dr_);
-    PseudoJet SD_fjet;
-    PseudoJets SD_subjets;
-    bool flag_subjet = false;
-    for (auto const &fj : fjets) {
-      SD_fjet = sd(fj);
-      ClusterSequence subjet_sdcs(SD_fjet.constituents(), JetDefinition(fastjet::antikt_algorithm, 0.4));
-      PseudoJets sdsubjets = fastjet::sorted_by_pt(subjet_sdcs.inclusive_jets(10.0));
-      if (sdsubjets.size() >= 2) {
-        SD_subjets = sdsubjets;
-        flag_subjet = true;
-        break;
-      }
-    }
     if (photons.size() > 0) {
+      auto p0 = photons.at(0);
       vars_.p0_pt = p0.pt();
       vars_.p0_eta = p0.eta();
       vars_.p0_phi = p0.phi(PhiMapping::MINUSPI_PLUSPI);
       vars_.p0_M = p0.mass();
-      _h["p_pt"]->fill(vars_.p0_pt);
-    }
+      _h["p_pt"]->fill(vars_.p0_pt / GeV);
 
-    if (photons.size() >= 1 && flag_subjet) {
-      // Populate variables
-      vars_.is_wg_gen = true;
-      vars_.j0_pt = SD_subjets[0].pt();
-      vars_.j0_eta = SD_subjets[0].eta();
-      vars_.j0_phi = SD_subjets[0].phi_std();
-      vars_.j0_M = SD_subjets[0].m();
-      vars_.j1_pt = SD_subjets[0].pt();
-      vars_.j1_eta = SD_subjets[0].eta();
-      vars_.j1_phi = SD_subjets[0].phi_std();
-      vars_.j1_M = SD_subjets[0].m();
+      std::vector<ConstGenParticlePtr> w, w_quarks;
+      for (ConstGenParticlePtr p : HepMCUtils::particles(event.genEvent())) {
+        if (abs(p->pdg_id()) == PID::WPLUSBOSON && p->status() == 62) {
+          w.push_back(p);
+        }
+      }
+      if (w.size() != 1)
+        vars_.w_flag = false;
+      else {
+        w_quarks = HepMCUtils::particles(w[0], HepMC::children);
+        if (w_quarks.size() != 2)
+          vars_.w_flag = false;
+        else if (abs(w_quarks[0]->pdg_id() + w_quarks[1]->pdg_id()) != 1 ||
+          abs(w_quarks[0]->pdg_id()) >= PID::BQUARK ||
+          abs(w_quarks[1]->pdg_id()) >= PID::BQUARK ||
+          w_quarks[0]->pdg_id() == 0 || w_quarks[1]->pdg_id() == 0)
+          vars_.w_flag = false;
+      }
+      _h["w_flag"]->fill(vars_.w_flag);
+      if (vars_.w_flag) {
+        vars_.w_pt = w[0]->momentum().perp();
+        if (w_quarks[0]->momentum().perp() < w_quarks[1]->momentum().perp())
+          swap(w_quarks[0], w_quarks[1]);
+        // unsigned ind = w_quarks[0]->momentum().perp() > w_quarks[1]->momentum().perp() ? 0 : 1;
+        auto wg_system = WGSystem(w_quarks[0]->momentum(), w_quarks[1]->momentum(), p0.momentum(), false);
+        vars_.phi_quark = wg_system.Phi();
+        _h["w_pt"]->fill(vars_.w_pt / GeV);
+        _h["phi_quark"]->fill(vars_.phi_quark);
+      }
 
-      vars_.fj_pt = fjets[0].pt();
-      vars_.fj_eta = fjets[0].eta();
-      vars_.fj_phi = fjets[0].phi(PhiMapping::MINUSPI_PLUSPI);
-      vars_.fj_M = fjets[0].mass();
+      // Filter jets on pT, eta and DR with lepton and photon
+      const Jets fjets =
+          applyProjection<FastJets>(event, "FJets").jetsByPt([&](Jet const &j) {
+            return j.pt() > fatjet_pt_cut_ &&
+                  std::abs(j.eta()) < fatjet_abs_eta_cut_ &&
+                  deltaR(j, p0) > fatjet_dr_;
+          });
+      
+      fastjet::contrib::SoftDrop sd(0.0, 0.1, fatjet_dr_);
+      PseudoJet SD_fjet;
+      PseudoJets SD_subjets, SD_subjets_matched;
+      bool flag_subjet = false, flag_subjet_matched = false;
+      for (auto const &fj : fjets) {
+        SD_fjet = sd(fj);
+        PseudoJets sdsubjets;
+        if (SD_fjet.has_pieces())
+          sdsubjets = SD_fjet.pieces();
+        else if (SD_fjet.has_constituents())
+          sdsubjets = SD_fjet.constituents();
+        sdsubjets = fastjet::sorted_by_pt(sdsubjets);
+        if (sdsubjets.size() >= 2) {
+          if (!flag_subjet) {
+            SD_subjets = sdsubjets;
+            flag_subjet = true;
+          }
+          // Check if the subjet is matched to the quark
+          if (!flag_subjet_matched && vars_.w_flag) {
+            if (deltaR(momentum(sdsubjets[0]), FourMomentum(w_quarks[0]->momentum())) < 0.4 &&
+                deltaR(momentum(sdsubjets[1]), FourMomentum(w_quarks[1]->momentum())) < 0.4) {
+              SD_subjets_matched = {sdsubjets[0], sdsubjets[1]};
+              flag_subjet_matched = true;
+            } else if (deltaR(momentum(sdsubjets[1]), FourMomentum(w_quarks[0]->momentum())) < 0.4 &&
+                       deltaR(momentum(sdsubjets[0]), FourMomentum(w_quarks[1]->momentum())) < 0.4) {
+              SD_subjets_matched = {sdsubjets[1], sdsubjets[0]};
+              flag_subjet_matched = true;
+            }
+          }
+          if (flag_subjet && flag_subjet_matched)
+            break;
+        }
+      }
 
-      vars_.wg_M = (p0.momentum() + fjets[0].momentum()).mass(); 
+      if (flag_subjet) {
+        // Populate variables
+        vars_.j0_pt = SD_subjets[0].pt();
+        vars_.j0_eta = SD_subjets[0].eta();
+        vars_.j0_phi = SD_subjets[0].phi_std();
+        vars_.j0_M = SD_subjets[0].m();
+        vars_.j1_pt = SD_subjets[1].pt();
+        vars_.j1_eta = SD_subjets[1].eta();
+        vars_.j1_phi = SD_subjets[1].phi_std();
+        vars_.j1_M = SD_subjets[1].m();
+        vars_.fj_pt = fjets[0].pt();
+        vars_.fj_eta = fjets[0].eta();
+        vars_.fj_phi = fjets[0].phi(PhiMapping::MINUSPI_PLUSPI);
+        vars_.fj_M = fjets[0].mass();
+        vars_.wg_M = (p0.momentum() + fjets[0].momentum()).mass();
+        // Now calculate EFT phi observables
+        auto wg_system = WGSystem(momentum(SD_subjets[0]), momentum(SD_subjets[1]), p0.momentum(), false);
+        vars_.phi_sjet = wg_system.Phi();
+        _h["fjet_sdmass"]->fill(SD_fjet.m() / GeV);
+        _h["phi_sjet"]->fill(vars_.phi_sjet);
+        _h["wg_mass"]->fill(vars_.wg_M / GeV);
+        _h["fjet_pt"]->fill(vars_.fj_pt / GeV);
+      }
 
-
-      // Now calculate EFT phi observables
-      auto wg_system = WGSystem(SD_subjets[0], SD_subjets[1], p0, false);
-
-      vars_.phi = wg_system.Phi();
-      vars_.phi_f = wg_system.SymPhi();
-
-      _h["fjet_sdmass"]->fill(SD_fjet.m());
-      _h["sjet_phi"]->fill(vars_.phi);
-      _h["sjet_phi_f"]->fill(vars_.phi_f);
-      _h["wg_mass"]->fill(vars_.wg_M);
-      _h["fjet_pt"]->fill(vars_.fj_pt);
-
+      if (flag_subjet_matched) {
+        _h["p_pt_matched"]->fill(vars_.p0_pt/ GeV);
+        _h["w_pt_matched"]->fill(vars_.w_pt / GeV);
+        _h["phi_quark_matched"]->fill(vars_.phi_quark);
+        auto wg_system = WGSystem(momentum(SD_subjets_matched[0]), momentum(SD_subjets_matched[1]), p0.momentum(), false);
+        vars_.phi_sjet_matched = wg_system.Phi();
+        _h["phi_sjet_matched"]->fill(vars_.phi_sjet_matched);
+      }
     }
   }
 
   void finalize() {
     // Scale according to cross section
     for (std::string const &x :
-         {"fjet_sdmass", "sjet_phi", "sjet_phi_f", "wg_mass", "p_pt", "fjet_pt"}) {
+         {"fjet_sdmass", "wg_mass", "p_pt", "p_pt_matched", "fjet_pt", "w_pt", "w_pt_matched", "phi_sjet", "phi_sjet_matched", "phi_quark", "phi_quark_matched"}) {
       if (crossSection() < 0.) {
         // Assume av. evt weight gives xsec
         scale(_h[x], 1.0 / femtobarn / numEvents());
@@ -229,25 +287,25 @@ public:
   }
 };
 
-WGQQ::WGSystem::WGSystem(PseudoJet const &j0, PseudoJet const &j1,
-                         Particle const &pho, bool verbose) {
+WGQQ::WGSystem::WGSystem(FourMomentum const &j0, FourMomentum const &j1,
+                         FourMomentum const &pho, bool verbose) {
 
-  wg_system += momentum(j0);
-  wg_system += momentum(j1);
-  wg_system += pho.momentum();
+  wg_system += j0;
+  wg_system += j1;
+  wg_system += pho;
 
   if (verbose) {
     std::cout << "> wg_system: " << wg_system << "\n";
-    std::cout << "> subjet1  : " << momentum(j0) << "\n";
-    std::cout << "> subjet2  : " << momentum(j1) << "\n";
-    std::cout << "> photon   : " << pho.momentum() << "\n";
+    std::cout << "> subjet1  : " << j0 << "\n";
+    std::cout << "> subjet2  : " << j1 << "\n";
+    std::cout << "> photon   : " << pho << "\n";
   }
 
   auto boost = LorentzTransform::mkFrameTransformFromBeta(wg_system.betaVec());
 
-  c_subjet1 = boost.transform(momentum(j0));
-  c_subjet2 = boost.transform(momentum(j1));
-  c_photon = boost.transform(pho.momentum());
+  c_subjet1 = boost.transform(j0);
+  c_subjet2 = boost.transform(j1);
+  c_photon = boost.transform(pho);
 
   if (verbose) {
     std::cout << "> c_subjet1  : " << c_subjet1 << "\n";

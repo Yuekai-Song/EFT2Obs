@@ -5,4 +5,4 @@ define ww = w+ w-
 generate p p > ww a NP<=1, ww > j j @0
 add process p p > ww a j NP<=1, ww > j j @1
 
-output WGQQ-LO
+output WGQQ

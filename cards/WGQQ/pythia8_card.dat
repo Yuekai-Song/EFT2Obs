@@ -7,7 +7,7 @@
 ! General parameters 
 ! ==================
 !
-Main:numberOfEvents      = 10000
+Main:numberOfEvents      = -1
 !
 ! -------------------------------------------------------------------
 ! Specify the HEPMC output of the Pythia8 shower. You can set it to:

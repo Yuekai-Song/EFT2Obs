@@ -1,0 +1,20 @@
+change rwgt_dir rwgt
+change helicity false
+launch --rwgt_name=rw0000
+set SMEFT 2 0
+set SMEFTcpv 2 0
+launch --rwgt_name=rw0001
+set SMEFT 2 0.005
+set SMEFTcpv 2 0
+launch --rwgt_name=rw0002
+set SMEFT 2 0.01
+set SMEFTcpv 2 0
+launch --rwgt_name=rw0003
+set SMEFT 2 0
+set SMEFTcpv 2 0.005
+launch --rwgt_name=rw0004
+set SMEFT 2 0
+set SMEFTcpv 2 0.01
+launch --rwgt_name=rw0005
+set SMEFT 2 0.01
+set SMEFTcpv 2 0.01
