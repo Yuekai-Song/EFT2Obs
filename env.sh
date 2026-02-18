@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+pushd /grid_mnt/data__data.polcms/cms/song/CMSSW_14_1_0_pre4/src/
+  eval `scramv1 runtime -sh`
+popd
 export EFTOBS_LOCAL_LHAPDF=1
 export LHAPDF_CONFIG_PATH="${PWD}/lhapdf/bin/lhapdf-config"
 export PYTHONPATH="${PWD}/$(echo lhapdf/lib64/python*/site-packages):${PYTHONPATH}"

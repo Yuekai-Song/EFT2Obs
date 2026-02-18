@@ -10,7 +10,7 @@ def merge(dir):
         subprocess.check_call(['yodamerge', '-o', yoda_file] + yoda_files)
     return yoda_file
 
-os.chdir('/grid_mnt/data__data.polcms/cms/song/EFT2Obs')
+os.chdir('/grid_mnt/data__data.polcms/cms/song/CMSSW_14_1_0_pre4/src/EFT2Obs')
 x_titles = {'p_pt': 'p_{T}(\\gamma) [GeV]', 'ptg': 'p_{T}(\\gamma) [GeV]', 'ptg_ajet': 'p_{T}(\\gamma) [GeV]', 'phi_sjet': '\\phi', 'phi_quark': '\\phi_{quark}', 
             'phi_sjet_matched': '\\phi', 'phi_quark_matched': '\\phi_{quark}', 'phi_sjet_noajet': '\\phi', 'phi_sjet_ajet': '\\phi',
             'w_pt_matched': 'p_{T}(W) [GeV]', 'w_pt': 'p_{T}(W) [GeV]', 'wp_mass': 'M_{W\\gamma} [GeV]'}

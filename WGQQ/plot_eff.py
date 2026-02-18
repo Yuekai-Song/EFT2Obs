@@ -6,7 +6,7 @@ import ROOT
 import glob
 import sys
 import os
-os.chdir('/grid_mnt/data__data.polcms/cms/song/EFT2Obs')
+os.chdir('/grid_mnt/data__data.polcms/cms/song/CMSSW_14_1_0_pre4/src/EFT2Obs')
 sys.path.append(os.path.join('.', 'scripts'))
 
 import plotting as plot

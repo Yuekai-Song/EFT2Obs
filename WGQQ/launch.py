@@ -4,7 +4,7 @@ sys.path.append('./scripts')
 from jobs import Jobs
 import argparse
 import os
-os.chdir('/grid_mnt/data__data.polcms/cms/song/EFT2Obs')
+os.chdir('/grid_mnt/data__data.polcms/cms/song/CMSSW_14_1_0_pre4/src/EFT2Obs')
 
 job_mgr = Jobs()
 parser = argparse.ArgumentParser()
