@@ -12,18 +12,23 @@ PROCESS=$(basename $1)
 CARDDIR=$1
 EXPORTRW=${2-0}
 CORES=${3-0}
-POSTFIX=${4-""}
+GRID_DIR=${PWD}/${4-""}
+POSTFIX=${5-""}
 ALLARGS=("$@")
-SETTERS=( "${ALLARGS[@]:4}" )
+SETTERS=( "${ALLARGS[@]:5}" )
 IWD=${PWD}
+mkdir -p ${GRID_DIR}
 
 ### SET ENVIRONMENT VARIABLES HERE
 RUNLABEL="pilotrun"
 ###
 
-cp cards/${CARDDIR}/{param,reweight,run,pythia8}_card.dat ${MG_DIR}/${PROCESS}/Cards/
+cp cards/${CARDDIR}/{param,reweight,pythia8}_card.dat ${MG_DIR}/${PROCESS}/Cards/
+cp cards/${CARDDIR}/run_card.dat ${MG_DIR}/${PROCESS}/Cards/
 # Also need to overwrite the default card, or we might lose some options
 cp cards/${CARDDIR}/pythia8_card.dat ${MG_DIR}/${PROCESS}/Cards/pythia8_card_default.dat
+
+if [ -d "${MG_DIR}/${PROCESS}/Events/${RUNLABEL}" ]; then rm -r ${MG_DIR}/${PROCESS}/Events/${RUNLABEL}; fi
 
 pushd ${MG_DIR}/${PROCESS}
 # Create MG config
@@ -37,7 +42,7 @@ pushd ${MG_DIR}/${PROCESS}
   echo "done"
 } > mgrunscript
 
-if [ -d "${MG_DIR}/${PROCESS}/Events/${RUNLABEL}" ]; then rm -r ${MG_DIR}/${PROCESS}/Events/${RUNLABEL}; fi
+
 
 if [ "$CORES" -gt "0" ]; then
     ./bin/generate_events ${RUNLABEL} --nb_core="${CORES}" -n < mgrunscript
@@ -85,9 +90,9 @@ pushd "gridpack_${PROCESS}"
 popd
 
 rm -r "gridpack_${PROCESS}"
-cp "gridpack_${PROCESS}.tar.gz" "${IWD}/gridpack_${PROCESS}${POSTFIX}.tar.gz"
+cp "gridpack_${PROCESS}.tar.gz" "${GRID_DIR}/gridpack${POSTFIX}.tar.gz"
 rm "gridpack_${PROCESS}.tar.gz"
 
 popd
 
-echo ">> Gridpack ${IWD}/gridpack_${PROCESS}${POSTFIX}.tar.gz has been successfully created"
+echo ">> Gridpack ${GRID_DIR}/gridpack${POSTFIX}.tar.gz has been successfully created"

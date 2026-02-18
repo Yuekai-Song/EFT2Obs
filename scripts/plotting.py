@@ -1531,7 +1531,7 @@ def DrawVerticalBand(pad, box, x1, x2):
     box.DrawBox(x1, ymin, x2, ymax)
 
 
-def DrawTitle(pad, text, align, textOffset=0.2,textSize=0.6):
+def DrawTitle(pad, text, align, textfont=42, textOffset=0.2,textSize=0.6, pox=None, poy=None):
     pad_backup = R.gPad
     pad.cd()
     t = pad.GetTopMargin()
@@ -1547,22 +1547,29 @@ def DrawTitle(pad, text, align, textOffset=0.2,textSize=0.6):
     latex.SetNDC()
     latex.SetTextAngle(0)
     latex.SetTextColor(R.kBlack)
-    latex.SetTextFont(42)
+    latex.SetTextFont(textfont)
     latex.SetTextSize(textSize * t * pad_ratio)
 
     y_off = 1 - t + textOffset * t
     if align == 1:
         latex.SetTextAlign(11)
-    if align == 1:
-        latex.DrawLatex(l, y_off, text)
+    if align == 1.5:
+        latex.SetTextAlign(11)
     if align == 2:
         latex.SetTextAlign(21)
-    if align == 2:
-        latex.DrawLatex(l + (1 - l - r) * 0.5, y_off, text)
     if align == 3:
         latex.SetTextAlign(31)
-    if align == 3:
-        latex.DrawLatex(1 - r, y_off, text)
+    if pox:
+        latex.DrawLatex(l + pox, y_off - poy, text)
+    else:
+        if align == 1.5:
+            latex.DrawLatex(l + (1 - l - r) * 0.13, y_off, text)
+        if align == 1:
+            latex.DrawLatex(l, y_off, text)
+        if align == 2:
+            latex.DrawLatex(l + (1 - l - r) * 0.5, y_off, text)
+        if align == 3:
+            latex.DrawLatex(1 - r, y_off, text)
     pad_backup.cd()
 
 ##@}

@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--gridpack', default='.')
 parser.add_argument('--launch-dir', default='.')
-parser.add_argument('--madgraph-dir', default='./MG5_aMC_v2_6_7/')
+parser.add_argument('--madgraph-dir', default='./MG5_aMC_v2_9_16/')
 parser.add_argument('-e', '--events', default=5000, type=int, help="Number of events to generate")
 parser.add_argument('-s', '--seed', type=int, default=1, help="Random number seed")
 parser.add_argument('-p', '--plugins', type=str, default='', help="Comma separated list of rivet plugins to run")
@@ -173,10 +173,10 @@ if load_hepmc is None:
         else:
             os.chdir('madevent')
             lines = ['pythia8']
-            if save_hepmc is None:
-                lines.append('set HEPMCoutput:file fifo@%s/events_%i.hepmc' % (tmpdir, seed))
-            else:
-                lines.append('set HEPMCoutput:file %s/events_%i.hepmc' % (tmpdir, seed))
+            # if save_hepmc is None:
+            #     lines.append('set HEPMCoutput:file fifo@%s/events_%i.hepmc' % (tmpdir, seed))
+            # else:
+            lines.append('set HEPMCoutput:file %s/events_%i.hepmc' % (tmpdir, seed))
             with open('mgrunscript', "w") as text_file:
                 text_file.write('\n'.join(lines))
             subprocess.check_call('./bin/madevent --debug shower GridRun < mgrunscript', shell=True)

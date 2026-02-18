@@ -5,10 +5,12 @@ import math
 import json
 import argparse
 import yoda
+import os
 from eftscaling import EFT2ObsHist, EFTScaling
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input', '-i', default="Rivet.yoda")
+parser.add_argument('--dir', '-d', default="WGQQ")
 parser.add_argument('--output', '-o', default=None)
 parser.add_argument('--config', '-c', default="Rivet.yoda")
 parser.add_argument('--hist', default='/HiggsTemplateCrossSectionsStage1/HTXS_stage1_pTjet30')
@@ -37,7 +39,7 @@ if args.output is None:
     if auto_name.startswith('/'):
         auto_name = auto_name[1:]
     args.output = auto_name.replace('/', '_')
-
+args.output = os.path.join(args.dir, args.output)
 save_formats = args.save.split(',')
 
 translate_tex = {}

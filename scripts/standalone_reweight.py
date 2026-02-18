@@ -91,7 +91,8 @@ class StandaloneReweight(object):
         rw_me = self.full_mod
         ## The following code adapted from Madgraph, rweight_interface.py: L1770
         self.all_pdgs = [[pdg for pdg in pdgs if pdg!=0] for pdgs in rw_me.get_pdg_order()[0]]
-        self.all_prefix = [''.join([X.decode() for X in j]).strip().lower() for j in rw_me.get_prefix()]
+        self.all_prefix = [bytes(j).decode(errors="ignore").strip().lower() for j in rw_me.get_prefix()]
+        # self.all_prefix = [''.join([X.decode() for X in j]).strip().lower() for j in rw_me.get_prefix()]
         prefix_set = set(self.all_prefix)
 
         # Prepare the helicity dict
@@ -161,8 +162,8 @@ class StandaloneReweight(object):
                 print '>> Reusing working directory %s' % self.target_dir
             """
             os.chdir(subproc_dir)
-            self.full_mod = imp.load_module('allmatrix3py', *imp.find_module('allmatrix3py'))
-            module_lib = glob("all_matrix3py*.so")[0]
+            self.full_mod = imp.load_module('allmatrix2py', *imp.find_module('allmatrix2py'))
+            module_lib = glob("all_matrix2py*.so")[0]
             for i in range(int(self.N)):
                 try:
                     os.mkdir('rwdir_%i' % i)
@@ -176,8 +177,8 @@ class StandaloneReweight(object):
             for i in range(int(self.N)):
                 sys.path[-1] = '%s/rwdir_%i' % (subproc_dir, i)
                 # print imp.find_module('allmatrix2py')
-                self.mods.append(imp.load_module('all_matrix3py', *imp.find_module('all_matrix3py')))
-                del sys.modules['all_matrix3py']
+                self.mods.append(imp.load_module('all_matrix2py', *imp.find_module('all_matrix2py')))
+                # del sys.modules['all_matrix2py']
                 self.mods[-1].initialise('%s/param_card_%i.dat' % (self.target_dir, i))
                 if hasattr(self.mods[-1], 'set_madloop_path'):
                     self.mods[-1].set_madloop_path(os.path.join(subproc_dir, 'MadLoop5_resources'))
@@ -185,7 +186,7 @@ class StandaloneReweight(object):
             os.chdir(iwd)
         elif self.mode == 1:
             os.chdir(subproc_dir)
-            self.mods.append(imp.load_module('allmatrix3py', *imp.find_module('all_matrix3py')))
+            self.mods.append(imp.load_module('allmatrix2py', *imp.find_module('all_matrix2py')))
             mod = self.mods[0]
             if hasattr(mod, 'set_madloop_path'):
                 mod.set_madloop_path(os.path.join(subproc_dir, 'MadLoop5_resources'))
@@ -412,6 +413,7 @@ class StandaloneReweight(object):
             if self.mode == 0:
                 with stdchannel_redirected(sys.stdout, os.devnull): #prevent MadLoop output
                   #smatrixhel(pdgs,procid,p,alphas,scale2,nhel,npdg=len(pdgs))
+                    # print(final_pdgs, final_parts_i, alphas, scale2, nhel)
                     val = self.mods[iw].smatrixhel(final_pdgs, -1, final_parts_i, alphas, scale2, nhel)
             elif self.mode == 1:
                 self.RestoreCache(iw)

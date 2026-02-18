@@ -13,5 +13,7 @@
   "cpg": "c_{#phig}",
   "ctg": "c_{tg}",
   "ctp": "c_{t#phi}",
-  "chwb": "c_{HWB}"
+  "chwb": "c_{HWB}",
+  "cw": "C_{W}",
+  "cwtil": "#tilde{C}_{W}"
 }

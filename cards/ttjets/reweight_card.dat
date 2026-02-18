@@ -1,0 +1,19 @@
+change rwgt_dir rwgt
+launch --rwgt_name=rw0000
+set SMEFT 15 0
+set SMEFTcpv 8 0
+launch --rwgt_name=rw0001
+set SMEFT 15 0.005
+set SMEFTcpv 8 0
+launch --rwgt_name=rw0002
+set SMEFT 15 0.01
+set SMEFTcpv 8 0
+launch --rwgt_name=rw0003
+set SMEFT 15 0
+set SMEFTcpv 8 0.005
+launch --rwgt_name=rw0004
+set SMEFT 15 0
+set SMEFTcpv 8 0.01
+launch --rwgt_name=rw0005
+set SMEFT 15 0.01
+set SMEFTcpv 8 0.01

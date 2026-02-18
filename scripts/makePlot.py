@@ -53,7 +53,7 @@ defs = cfg['parameter_defaults']
 
 
 canv = ROOT.TCanvas(args.hist.replace('.json', ''), '')
-pads = plot.TwoPadSplit(0.27, 0.01, 0.01)
+pads = plot.TwoPadSplit(0.30, 0.01, 0.02)
 
 hists = []
 hist_errs = []
@@ -71,19 +71,22 @@ for h in h_axes:
 h_axes[1].GetXaxis().SetTitle(args.x_title)
 
 h_axes[0].GetYaxis().SetTitle('a.u.')
+ROOT.TGaxis.SetExponentOffset(-0.09, 0.01, 'y')
+h_axes[0].GetYaxis().SetMaxDigits(3)
 h_axes[0].Draw()
 if args.logy:
     pads[0].SetLogy()
     h_axes[0].SetMinimum(args.y_min)
 
 # A dict to keep track of the hists
-legend = ROOT.TLegend(0.60, 0.88 - 0.05 * len(args.draw), 0.90, 0.91, '', 'NBNDC')
+legend = ROOT.TLegend(0.75, 0.88 - 0.06 * len(args.draw), 0.98, 0.91, '', 'NBNDC')
 
-legend.AddEntry(h_nominal, 'Nominal', 'L')
+legend.AddEntry(h_nominal, 'SM', 'L')
 
 plot.Set(h_nominal, LineColor=1, LineWidth=3)
 h_nominal.Scale(1., 'width')
 h_nominal.Draw('HISTSAMEE')
+legend.SetTextSize(0.03)
 
 for tgt in args.draw:
     val_part = tgt.split(':')[0]
@@ -94,7 +97,7 @@ for tgt in args.draw:
         label = X.split('=')[0]
         val = float(X.split('=')[1])
         vals[label] = float(val)
-        labels.append('%s=%g' % (Translate(label, translate_tex), val))
+        labels.append('%s = %.1f' % (Translate(label, translate_tex), val))
     h = jhist.getScaled(h_ref_nominal, vals, lin_terms=True, square_terms=(not args.no_square), cross_terms=(not args.no_cross))
     h.Scale(1., 'width')
     h_err = h.Clone()
@@ -160,8 +163,12 @@ pads[0].RedrawAxis()
 
 
 # CMS logo
-plot.DrawTitle(pads[0], args.title_left, 1)
-plot.DrawTitle(pads[0], args.title_right, 3)
+plot.DrawCMSLogo(pads[0], 'CMS', 'Simulation', 0, 0.125, 0, 0)
+# plot.DrawTitle(pads[0], 'CMS', 1, textfont=61, textSize=0.8)
+# plot.DrawTitle(pads[0], 'Simulation', 1.5, textfont=52)
+plot.DrawTitle(pads[0], args.title_left, 2, pox=0.15, poy=0.08)
+plot.DrawTitle(pads[0], args.title_right, 2, pox = 0.15, poy = 0.15)
+plot.DrawTitle(pads[0], 'SMEFTsim3, 13.6 TeV', 3)
 
 
 canv.Print('.png')
