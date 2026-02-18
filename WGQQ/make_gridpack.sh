@@ -31,18 +31,18 @@ popd
 
 ./scripts/setup_process.sh $PROCESS
 
-python scripts/make_config.py -p ${PROCESS} -o cards/${PROCESS}/config.json \
+python3 scripts/make_config.py -p ${PROCESS} -o cards/${PROCESS}/config.json \
  --pars SMEFT:2 SMEFTcpv:2  --def-val 0.01 --def-sm 0.0 --def-gen 0.0
 
-python scripts/make_param_card.py -p ${PROCESS} -c cards/${PROCESS}/config.json -o cards/${PROCESS}/param_card.dat
+python3 scripts/make_param_card.py -p ${PROCESS} -c cards/${PROCESS}/config.json -o cards/${PROCESS}/param_card.dat
 
-python scripts/make_reweight_card.py cards/${PROCESS}/config.json cards/${PROCESS}/reweight_card.dat --prepend "change helicity false"
+python3 scripts/make_reweight_card.py cards/${PROCESS}/config.json cards/${PROCESS}/reweight_card.dat --prepend "change helicity false"
 
 if [[ -d "${GRID_DIR}" ]]; then
     echo "Directory of gridpack ${GRID_DIR} already exists. Remove it!"
     rm -r ${GRID_DIR}
 fi
 
-# ./scripts/make_gridpack.sh ${PROCESS} 0 0 ${GRID_DIR}
-# rm -r ${MG_DIR}/${PROCESS}
-# rm -r cards/${PROCESS}
+./scripts/make_gridpack.sh ${PROCESS} 0 0 ${GRID_DIR}
+rm -r ${MG_DIR}/${PROCESS}
+rm -r cards/${PROCESS}

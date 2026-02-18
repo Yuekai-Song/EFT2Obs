@@ -23,7 +23,7 @@ for i in range(args.initial_seed, args.initial_seed + args.jobs):
         for X in args.env.split(','):
             cmd.append('export %s' % X)
 
-    gp_cmd = 'python %s/scripts/run_gridpack.py --launch-dir %s --seed %i' % (iwd, iwd, i)
+    gp_cmd = 'python3 %s/scripts/run_gridpack.py --launch-dir %s --seed %i' % (iwd, iwd, i)
     if len(unknown) > 0:
         gp_cmd += ' %s' % (' '.join(unknown))
     cmd.append(gp_cmd)

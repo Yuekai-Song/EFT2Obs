@@ -34,9 +34,9 @@ if not os.path.isfile(json1) or not os.path.isfile(json2):
     if not os.path.isfile(yoda_file):
         yoda_files = glob.glob(os.path.join(dir, "Rivet_*.yoda"))
         subprocess.check_call(['yodamerge', '-o', yoda_file] + yoda_files)
-    subprocess.check_call(['python', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/WGQQ/' +
+    subprocess.check_call(['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/WGQQ/' +
                         var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--dir', dir])
-    subprocess.check_call(['python', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/WGQQ/' +
+    subprocess.check_call(['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/WGQQ/' +
                         var + "_matched", '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--dir', dir])
 
 ROOT.PyConfig.IgnoreCommandLineOptions = True

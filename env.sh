@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+export SCRAM_ARCH=el9_amd64_gcc12
 pushd /grid_mnt/data__data.polcms/cms/song/CMSSW_14_1_0_pre4/src/
   eval `scramv1 runtime -sh`
 popd

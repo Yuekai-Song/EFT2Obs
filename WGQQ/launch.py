@@ -19,7 +19,7 @@ if args.step == 'make':
     job_mgr.job_mode = 'condor'
     job_mgr.task_name = 'divide'
     job_mgr.task_dir = 'jobs'
-    job_mgr.bopts = '+JobFlavour = "longlunch"\nT3Queue = long\ngetenv = False\nuse_x509userproxy = True\nWNTag=el9\n+SingularityCmd = ""\ninclude : /opt/exp_soft/cms/t3_tst/t3queue |'
+    job_mgr.bopts = '+JobFlavour = "longlunch"\nT3Queue = long\ngetenv = False\nWNTag=el9\n+SingularityCmd = ""\ninclude : /opt/exp_soft/cms/t3_tst/t3queue |'
 else:
     job_mgr.job_mode = 'interactive'
     job_mgr.task_name = 'run'
