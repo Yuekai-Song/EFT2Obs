@@ -6,13 +6,13 @@ from builtins import object
 import sys
 import os
 import ROOT
-import imp
 import subprocess
 import argparse
 import math
 import json
 import numpy
 import copy
+import importlib
 from glob import glob
 from collections import defaultdict
 
@@ -149,7 +149,8 @@ class StandaloneReweight(object):
         sys.path.append(subproc_dir)
         self.full_mod = None
         self.mods = []
-
+        # if "allmatrix2py" in sys.modules:
+        #     del sys.modules["allmatrix2py"]
         if self.mode == 0:
             """
             if not os.path.isdir(os.path.join(subproc_dir, 'rwdir_0')):
@@ -162,7 +163,8 @@ class StandaloneReweight(object):
                 print '>> Reusing working directory %s' % self.target_dir
             """
             os.chdir(subproc_dir)
-            self.full_mod = imp.load_module('allmatrix2py', *imp.find_module('allmatrix2py'))
+
+            self.full_mod = importlib.import_module("allmatrix2py")
             module_lib = glob("all_matrix2py*.so")[0]
             for i in range(int(self.N)):
                 try:
@@ -175,9 +177,19 @@ class StandaloneReweight(object):
             os.chdir(subproc_dir)
 
             for i in range(int(self.N)):
-                sys.path[-1] = '%s/rwdir_%i' % (subproc_dir, i)
+                # sys.path[-1] = '%s/rwdir_%i' % (subproc_dir, i)
+                # print([p for p in sys.path if subproc_dir in p])
                 # print imp.find_module('allmatrix2py')
-                self.mods.append(imp.load_module('all_matrix2py', *imp.find_module('all_matrix2py')))
+                internal_mod_name = 'all_matrix2py'
+                if internal_mod_name in sys.modules:
+                    del sys.modules[internal_mod_name]
+                so_path = os.path.join(subproc_dir, f'rwdir_{i}', module_lib)
+                spec = importlib.util.spec_from_file_location(internal_mod_name, so_path)
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules[internal_mod_name] = mod
+                spec.loader.exec_module(mod)
+                self.mods.append(mod)
+                # self.mods.append(imp.load_module('all_matrix2py', *imp.find_module('all_matrix2py')))
                 # del sys.modules['all_matrix2py']
                 self.mods[-1].initialise('%s/param_card_%i.dat' % (self.target_dir, i))
                 if hasattr(self.mods[-1], 'set_madloop_path'):
@@ -186,8 +198,12 @@ class StandaloneReweight(object):
             os.chdir(iwd)
         elif self.mode == 1:
             os.chdir(subproc_dir)
-            self.mods.append(imp.load_module('allmatrix2py', *imp.find_module('all_matrix2py')))
-            mod = self.mods[0]
+            spec = importlib.util.spec_from_file_location("allmatrix2py", os.path.join(subproc_dir, glob("all_matrix2py*.so")[0]))
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules["allmatrix2py"] = mod
+            spec.loader.exec_module(mod)
+            self.mods.append(mod)
+
             if hasattr(mod, 'set_madloop_path'):
                 mod.set_madloop_path(os.path.join(subproc_dir, 'MadLoop5_resources'))
             self.references = {}
