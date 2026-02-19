@@ -151,6 +151,17 @@ class StandaloneReweight(object):
         self.mods = []
         # if "allmatrix2py" in sys.modules:
         #     del sys.modules["allmatrix2py"]
+        matrix3 = glob(os.path.join(subproc_dir, "all_matrix3py*.so"))
+
+        if matrix3:
+            full_mod_name = "allmatrix3py"
+            module_lib = os.path.basename(matrix3[0])
+            internal_mod_name = 'all_matrix3py'
+        else:
+            full_mod_name = "allmatrix2py"
+            module_lib = os.path.basename(glob(os.path.join(subproc_dir, "all_matrix2py*.so"))[0])
+            internal_mod_name = 'all_matrix2py'
+
         if self.mode == 0:
             """
             if not os.path.isdir(os.path.join(subproc_dir, 'rwdir_0')):
@@ -163,9 +174,7 @@ class StandaloneReweight(object):
                 print '>> Reusing working directory %s' % self.target_dir
             """
             os.chdir(subproc_dir)
-
-            self.full_mod = importlib.import_module("allmatrix2py")
-            module_lib = glob("all_matrix2py*.so")[0]
+            self.full_mod = importlib.import_module(full_mod_name)
             for i in range(int(self.N)):
                 try:
                     os.mkdir('rwdir_%i' % i)
@@ -180,7 +189,6 @@ class StandaloneReweight(object):
                 # sys.path[-1] = '%s/rwdir_%i' % (subproc_dir, i)
                 # print([p for p in sys.path if subproc_dir in p])
                 # print imp.find_module('allmatrix2py')
-                internal_mod_name = 'all_matrix2py'
                 if internal_mod_name in sys.modules:
                     del sys.modules[internal_mod_name]
                 so_path = os.path.join(subproc_dir, f'rwdir_{i}', module_lib)
@@ -198,9 +206,9 @@ class StandaloneReweight(object):
             os.chdir(iwd)
         elif self.mode == 1:
             os.chdir(subproc_dir)
-            spec = importlib.util.spec_from_file_location("allmatrix2py", os.path.join(subproc_dir, glob("all_matrix2py*.so")[0]))
+            spec = importlib.util.spec_from_file_location("allmatrix3py", os.path.join(subproc_dir, module_lib))
             mod = importlib.util.module_from_spec(spec)
-            sys.modules["allmatrix2py"] = mod
+            sys.modules[full_mod_name] = mod
             spec.loader.exec_module(mod)
             self.mods.append(mod)
 
