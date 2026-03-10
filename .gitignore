@@ -30,3 +30,7 @@ mgconfigscript
 cards/fitting-exercise
 rw_*/
 test-*/
+test.py
+*.ipynb
+HEPToolsInstallers
+*log
