@@ -22,6 +22,7 @@ parser.add_argument('--legacy', action='store_true', help="Use the legacy format
 parser.add_argument('--translate-tex', default=None, help="json file to translate parameter names to latex")
 parser.add_argument('--translate-txt', default=None, help="json file to translate parameter names in the text file")
 parser.add_argument('--bin-labels', default=None, help="json file to translate bin labels")
+parser.add_argument('--overflow', action='store_true', help="Include overflow binning")
 parser.add_argument('--nlo', action='store_true', help="Set if weights came from NLO reweighting")
 parser.add_argument('--filter-params', default=None, help="Specify a subset of parameters to include")
 parser.add_argument('--print-style', default="perBin", choices=["perBin", "perTerm"], help="Specify the format for printing to the screen")
@@ -81,18 +82,21 @@ is2D = isinstance(hists[0], yoda.Histo2D)
 if args.rebin is not None and not is2D:
     rebin = [float(X) for X in args.rebin.split(',')]
     for h in hists:
-        h.rebinTo(rebin)
+        print(rebin)
+        h.rebinXTo(rebin)
 
-nbins = hists[0].numBins()
+overflow = args.overflow and not is2D
+nbins = hists[0].numBins(includeOverflows=overflow)
+bin_range = range(1, nbins) if overflow else range(nbins)
 
 if is2D:
-    edges = [[list(hists[0].bins()[ib].xEdges()), list(hists[0].bins()[ib].yEdges())] for ib in range(nbins)]
+    edges = [[[hists[0].xMins()[ib], hists[0].xMaxs()[ib]], [hists[0].yMins()[ib], hists[0].yMaxs()[ib]]] for ib in bin_range]
     # areas = list(hists[0].volumes())
-    areas = [hists[0].bins()[ib].volume() for ib in range(nbins)]
+    areas = [hists[0].bins()[ib].sumW() for ib in bin_range]
 else:
-    print(nbins)
-    edges = [list(hists[0].bins()[ib].xEdges()) for ib in range(nbins)]
-    areas = list(hists[0].areas())
+    nbins = hists[0].numBins(includeOverflows=args.overflow)
+    edges = [[hists[0].xMins(args.overflow)[ib], hists[0].xMaxs(args.overflow)[ib]] for ib in bin_range]
+    areas = [hists[0].bins(args.overflow)[ib].sumW() for ib in bin_range]
     # print (areas,  [hists[0].bins[ib].sumW for ib in range(nbins)])
 
 for p in pars:
@@ -134,9 +138,9 @@ def initTerms(params):
 
 e2ohist = EFT2ObsHist(
     terms=initTerms([X['name'] for X in pars]),
-    sumW=[[hist.bins()[ib].sumW() for ib in range(nbins)] for hist in hists],
-    sumW2=[[hist.bins()[ib].sumW2() for ib in range(nbins)] for hist in hists],
-    numEntries=[[hist.bins()[ib].numEntries() for ib in range(nbins)] for hist in hists],
+    sumW=[[hist.bins(overflow)[ib].sumW() for ib in bin_range] for hist in hists],
+    sumW2=[[hist.bins(overflow)[ib].sumW2() for ib in bin_range] for hist in hists],
+    numEntries=[[hist.bins(overflow)[ib].numEntries() for ib in bin_range] for hist in hists],
     bin_edges=edges,
     bin_labels=bin_labels)
 

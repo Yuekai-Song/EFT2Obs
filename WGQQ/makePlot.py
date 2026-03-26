@@ -28,7 +28,11 @@ parser.add_argument('--browser', '-b', action='store_true')
 parser.add_argument('--square', '-s', action='store_true')
 parser.add_argument('--cross', '-c', action='store_true')
 parser.add_argument('--to-scaling', '-t', default=False, action='store_true')
-parser.add_argument('--title', '-title', type=str, default='')
+parser.add_argument('--title', type=str, default='')
+parser.add_argument('--bin-labels', default='WGQQ/bin_labels.json', help="json file to translate bin labels")
+parser.add_argument('--rebin', default=None, help="Comma separated list of new bin edges")
+parser.add_argument('--overflow', action='store_true', default=False)
+
 args = parser.parse_args()
 
 dir = os.path.join("./WGQQ", args.dir)
@@ -51,10 +55,15 @@ if 'inclusive' in dir or args.dir == "ptg400":
 else:
     yoda_file = merge(dir)
 
-rivet = 'WGQQ'
+rivet = 'RAW/WGQQ'
 if args.to_scaling:
-    subprocess.check_call(['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/' + rivet + '/' +
-                      var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--bin-labels', 'WGQQ/bin_labels.json', '--dir', dir])
+    cmds = ['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/' + rivet + '/' +
+                      var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--bin-labels', args.bin_labels, '--dir', dir]
+    if args.overflow:
+        cmds.append('--overflow')
+    if args.rebin:
+        cmds += ['--rebin', args.rebin]
+    subprocess.check_call(cmds)
 
 else:
     subprocess.check_call(['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/' + rivet + '/' +
@@ -75,7 +84,7 @@ else:
         plot_args.append('--no-cross')
     # plot_args.append('--logy')
 
-    subprocess.check_call(['python3', 'scripts/makePlot.py', '--hist', os.path.join(dir, rivet + '_' + var + '.json'), '-c', cfg, '--x-title', x_titles[var], '--title-left',
+    subprocess.check_call(['python3', 'scripts/makePlot.py', '--hist', os.path.join(dir, rivet.replace('/', '_') + '_' + var + '.json'), '-c', cfg, '--x-title', x_titles[var], '--title-left',
                           'W^{\\pm}\\gamma \\rightarrow qq\\gamma', '--title-right', args.title, '--ratio', range_v, '--draw'] + cw_vals + ['--show-unc', '--y-min', '1E-9', '--translate', 'resources/translate_root.json'] + plot_args)
 
     if args.browser:

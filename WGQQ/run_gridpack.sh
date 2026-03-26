@@ -20,7 +20,7 @@ if [[ $TEST == "1" ]]; then
   -o WGQQ/${PROCESS}
 else
   rm -f WGQQ/${PROCESS}/*.yoda
-  python3 scripts/launch_jobs.py --gridpack WGQQ/${PROCESS}/gridpack.tar.gz -j 1 -s 1 -e 20000 \
+  python3 scripts/launch_jobs.py --gridpack WGQQ/${PROCESS}/gridpack.tar.gz -j 100 -s 1 -e 20000 \
   -p ${RIVET} -o WGQQ/${PROCESS} --job-mode condor --dir jobs --task-name WGQQ-${PROCESS} \
   --sub-opts '+JobFlavour = "longlunch"\nT3Queue = long\ngetenv = False\nuse_x509userproxy = True\nWNTag=el9\n+SingularityCmd = ""\ninclude : /opt/exp_soft/cms/t3_tst/t3queue |'
 fi

@@ -5,6 +5,8 @@ from builtins import object
 import numpy as np
 import json
 import yaml
+import math
+from copy import deepcopy
 from array import array
 
 def Translate(arg, translations):
@@ -172,13 +174,20 @@ class EFTScaling(object):
         return isinstance(self.bin_edges[0][0], list)
     
     def writeToJSON(self, filename, legacy=False, translate_txt=dict()):
+        bin_edges = deepcopy(self.bin_edges)
+        if not self.is2D():
+            for bin_edge in bin_edges:
+                if math.isinf(bin_edge[1]):
+                    bin_edge[1] = 'inf'
+                if math.isinf(bin_edge[0]):
+                    bin_edge[1] = '-inf'
         with open(filename, 'w') as outfile:
             if legacy:
                 res = {
                     "bins": [[X.oldJSONForBin(ib) for X in self.terms] for ib in range(self.nbins)],
                     "nbins": self.nbins,
                     "areas": self.sm_vals.tolist(),
-                    "edges": self.bin_edges,
+                    "edges": bin_edges,
                     "bin_labels": self.bin_labels
                 }
             else:
@@ -186,7 +195,7 @@ class EFTScaling(object):
                     "terms": [X.asJSON() for X in self.terms],
                     "nbins": int(self.nbins),
                     "sm_vals": self.sm_vals.tolist(),
-                    "bin_edges": self.bin_edges,
+                    "bin_edges": bin_edges,
                     "bin_labels": self.bin_labels,
                     "parameters": self.parameters() # this is as a convenience for other scripts, we won't parse it when reading in
                 }
@@ -299,13 +308,20 @@ class EFT2ObsHist(object):
 
 
     def writeToJSON(self, filename):
+        if not isinstance(self.bin_edges[0][0], list):
+            bin_edges = deepcopy(self.bin_edges)
+            for bin_edge in bin_edges:
+                if math.isinf(bin_edge[1]):
+                    bin_edge[1] = 'inf'
+                if math.isinf(bin_edge[0]):
+                    bin_edge[1] = '-inf'
         with open(filename, 'w') as outfile:
             res = {
                 "terms": self.terms,
                 "sumW": self.sumW.tolist(),
                 "sumW2": self.sumW2.tolist(),
                 "numEntries": self.numEntries.tolist(),
-                "bin_edges": self.bin_edges,
+                "bin_edges": bin_edges,
                 "bin_labels": self.bin_labels
             }
             outfile.write(json.dumps(res, sort_keys=False))

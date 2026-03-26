@@ -1,5 +1,5 @@
 // -*- C++ -*-
-#include "HepMC/IteratorRange.h"
+#include "HepMC3/Relatives.h"
 #include "Rivet/Analysis.hh"
 #include "Rivet/Event.hh"
 #include "Rivet/Math/LorentzTrans.hh"
@@ -117,7 +117,7 @@ public:
   double photon_pt_cut_ = 200.;
   double photon_abs_eta_cut_ = 2.5;
 
-  std::vector<double> pta_bins_ = {200, 350, 500, 700, 1000, 2000};
+  std::vector<double> pta_bins_;
   std::vector<double> pta_full_bins_ = {200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000};
   std::vector<double> mwa_bins_ = {400, 500, 700, 1000, 2000, 4000};
   std::vector<double> phi_bins_ = {
@@ -129,6 +129,11 @@ public:
   RIVET_DEFAULT_ANALYSIS_CTOR(WGQQ);
 
   void init() {
+    pta_bins_.clear();
+    for (double x = 200; x <= 1200; x += 50) {
+      pta_bins_.push_back(x);
+    }
+    pta_bins_.push_back(2000);
     vars_.resetVars();
 
     FinalState fs;
@@ -137,10 +142,10 @@ public:
     // Jets - all final state particles excluding neutrinos
     VetoedFinalState vfs;
     vfs.vetoNeutrinos();
-    FastJets fastjets(vfs, FastJets::ANTIKT, fatjet_dr_);
+    FastJets fastjets(vfs, JetAlg::ANTIKT, fatjet_dr_);
     declare(fastjets, "FJets");
 
-    FastJets fastjets_ak4(vfs, FastJets::ANTIKT, jet_dr_);
+    FastJets fastjets_ak4(vfs, JetAlg::ANTIKT, jet_dr_);
     declare(fastjets_ak4, "Jets");
 
     // Photons
@@ -183,7 +188,7 @@ public:
     vars_.resetVars();
 
     const Particles photons =
-        applyProjection<FinalState>(event, "Photons").particlesByPt(Cuts:: pT > photon_pt_cut_*GeV && Cuts::abseta < photon_abs_eta_cut_);
+        apply<FinalState>(event, "Photons").particlesByPt(Cuts:: pT > photon_pt_cut_*GeV && Cuts::abseta < photon_abs_eta_cut_);
 
     if (photons.size() > 0) {
       auto p0 = photons.at(0);
@@ -202,7 +207,7 @@ public:
       if (w.size() != 1)
         vars_.w_flag = false;
       else {
-        w_quarks = HepMCUtils::particles(w[0], HepMC::children);
+        w_quarks = HepMCUtils::particles(w[0], HepMC3::Relatives::CHILDREN);
         if (w_quarks.size() != 2)
           vars_.w_flag = false;
         else if (abs(w_quarks[0]->pdg_id() + w_quarks[1]->pdg_id()) != 1 ||
@@ -225,7 +230,7 @@ public:
 
       // Filter jets on pT, eta and DR with lepton and photon
       const Jets fjets =
-          applyProjection<FastJets>(event, "FJets").jetsByPt([&](Jet const &j) {
+          apply<FastJets>(event, "FJets").jetsByPt([&](Jet const &j) {
             return j.pt() > fatjet_pt_cut_ &&
                   std::abs(j.eta()) < fatjet_abs_eta_cut_ &&
                   deltaR(j, p0) > fatjet_dr_;
@@ -289,7 +294,7 @@ public:
         _h["phi_sjet"]->fill(vars_.phi_sjet);
         _h["wp_mass"]->fill(vars_.wg_M / GeV);
         _h["fjet_pt"]->fill(vars_.fj_pt / GeV);
-        const Jets jets = applyProjection<FastJets>(event, "Jets").jetsByPt([&](Jet const &j) {
+        const Jets jets = apply<FastJets>(event, "Jets").jetsByPt([&](Jet const &j) {
             return j.pt() > jet_pt_cut_ && deltaR(j, p0) > jet_dr_ && deltaR(j, fjet) > fatjet_dr_;
         });
 
