@@ -36,3 +36,4 @@ test.py
 *.ipynb
 HEPToolsInstallers
 *log
+*.root
