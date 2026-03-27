@@ -23,12 +23,49 @@ parser.add_argument('--translate-tex', default=None, help="json file to translat
 parser.add_argument('--translate-txt', default=None, help="json file to translate parameter names in the text file")
 parser.add_argument('--bin-labels', default=None, help="json file to translate bin labels")
 parser.add_argument('--overflow', action='store_true', help="Include overflow binning")
+parser.add_argument('--differential', action='store_true', help="Considering differential binning when rebinning")
 parser.add_argument('--nlo', action='store_true', help="Set if weights came from NLO reweighting")
 parser.add_argument('--filter-params', default=None, help="Specify a subset of parameters to include")
 parser.add_argument('--print-style', default="perBin", choices=["perBin", "perTerm"], help="Specify the format for printing to the screen")
 parser.add_argument('--color-above', default=None, type=float, help="When using --print-style perTerm, highlight relative uncertainties above this threshold")
 args = parser.parse_args()
 
+def sumW(hist, i, overflow=False):
+    if 'Estimate' in repr(type(hist)):
+        return hist.bins(overflow)[i].val()
+    else:
+        return hist.bins(overflow)[i].sumW()
+def sqr(a):
+    return a * a
+
+def sumW2(hist, i, overflow=False):
+    if 'Estimate' in repr(type(hist)):
+        return sqr(hist.bins(overflow)[i].err('stats')[0])
+    else:
+        return hist.bins(overflow)[i].sumW2()
+
+# It is super stupid to get number of entries from the raw histo, but no choice so far
+def numEntries(hist, i, overflow=False, yoda_dict=None):
+    yoda_dict = aos if yoda_dict is None else yoda_dict
+    if 'Estimate' in repr(type(hist)):
+        hist = yoda_dict[hist.path().replace('/', '/RAW/', 1)]
+    return hist.bins(overflow)[i].numEntries()
+
+def scale(obj, sf):
+    if hasattr(obj, 'scaleW'):
+        obj.scaleW(sf)
+    else:
+        obj.scale(sf)
+
+def rebinTo(hist, newEdges, differential=True, axis='X'):
+    if differential:
+        for b in hist.bins():
+            scale(b, b.dVol())
+    getattr(hist, f'rebin{axis.upper()}To')(newEdges)
+    # there's a bug here for Yoda version before 2.1.2, now only local fix
+    if differential:
+        for b in hist.bins():
+            scale(b, 1.0 / b.dVol())
 
 with open(args.config) as jsonfile:
     cfg = json.load(jsonfile)
@@ -83,20 +120,19 @@ if args.rebin is not None and not is2D:
     rebin = [float(X) for X in args.rebin.split(',')]
     for h in hists:
         print(rebin)
-        h.rebinXTo(rebin)
+        rebinTo(h, rebin, differential=args.differential, axis='X')
 
-overflow = args.overflow and not is2D
+# so far, the overflow bin contents of Estimate from rivet are always NaN
+overflow = args.overflow and not is2D and not 'Estimate' in repr(type(hists[0]))
 nbins = hists[0].numBins(includeOverflows=overflow)
 bin_range = range(1, nbins) if overflow else range(nbins)
 
 if is2D:
-    edges = [[[hists[0].xMins()[ib], hists[0].xMaxs()[ib]], [hists[0].yMins()[ib], hists[0].yMaxs()[ib]]] for ib in bin_range]
+    edges = [[[hists[0].xMins(overflow)[ib], hists[0].xMaxs(overflow)[ib]], [hists[0].yMins(overflow)[ib], hists[0].yMaxs(overflow)[ib]]] for ib in bin_range]
     # areas = list(hists[0].volumes())
-    areas = [hists[0].bins()[ib].sumW() for ib in bin_range]
 else:
-    nbins = hists[0].numBins(includeOverflows=args.overflow)
-    edges = [[hists[0].xMins(args.overflow)[ib], hists[0].xMaxs(args.overflow)[ib]] for ib in bin_range]
-    areas = [hists[0].bins(args.overflow)[ib].sumW() for ib in bin_range]
+    edges = [[hists[0].xMins(overflow)[ib], hists[0].xMaxs(overflow)[ib]] for ib in bin_range]
+areas = [sumW(hists[0], ib, overflow) for ib in bin_range]
     # print (areas,  [hists[0].bins[ib].sumW for ib in range(nbins)])
 
 for p in pars:
@@ -122,7 +158,7 @@ for ix in range(0, len(pars)):
 assert(len(eftconstants) == len(hists))
 
 for ip, hist in enumerate(hists):
-    hist.scaleW(1. / eftconstants[ip])
+    scale(hist, 1. / eftconstants[ip])
 
 
 def initTerms(params):
@@ -138,9 +174,9 @@ def initTerms(params):
 
 e2ohist = EFT2ObsHist(
     terms=initTerms([X['name'] for X in pars]),
-    sumW=[[hist.bins(overflow)[ib].sumW() for ib in bin_range] for hist in hists],
-    sumW2=[[hist.bins(overflow)[ib].sumW2() for ib in bin_range] for hist in hists],
-    numEntries=[[hist.bins(overflow)[ib].numEntries() for ib in bin_range] for hist in hists],
+    sumW=[[sumW(hist, ib, overflow) for ib in bin_range] for hist in hists],
+    sumW2=[[sumW2(hist, ib, overflow) for ib in bin_range] for hist in hists],
+    numEntries=[[numEntries(hist, ib, overflow, aos) for ib in bin_range] for hist in hists],
     bin_edges=edges,
     bin_labels=bin_labels)
 

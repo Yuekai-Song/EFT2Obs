@@ -55,10 +55,10 @@ if 'inclusive' in dir or args.dir == "ptg400":
 else:
     yoda_file = merge(dir)
 
-rivet = 'RAW/WGQQ'
+rivet = 'WGQQ'
 if args.to_scaling:
     cmds = ['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/' + rivet + '/' +
-                      var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--bin-labels', args.bin_labels, '--dir', dir]
+                      var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--bin-labels', args.bin_labels, '--dir', dir, '--differential']
     if args.overflow:
         cmds.append('--overflow')
     if args.rebin:
@@ -67,7 +67,7 @@ if args.to_scaling:
 
 else:
     subprocess.check_call(['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/' + rivet + '/' +
-                    var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--dir', dir])
+                    var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--dir', dir, '--differential'])
     if args.var not in ranges:
         range_v = '0.5,1.5'
     else:
