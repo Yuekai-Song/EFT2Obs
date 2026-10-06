@@ -10,7 +10,7 @@ if [ -z "${MG_TARBALL}" ]; then echo "ERROR: environment variable MG_TARBALL is 
 
 
 if [ ${EFTOBS_LOCAL_LHAPDF} -eq 1 ]; then
-  echo "ERROR: environment variable LHAPDF_CONFIG_PATH is not set" 
+  echo "Installing local LHAPDF"
   LHAPDF_VERSION="LHAPDF-6.5.3"
   wget "https://lhapdf.hepforge.org/downloads/?f=${LHAPDF_VERSION}.tar.gz" -O "${LHAPDF_VERSION}.tar.gz"
   tar xf "${LHAPDF_VERSION}.tar.gz"
@@ -46,7 +46,16 @@ rm "${MG_TARBALL}"
 pushd "${MG_DIR}"
   # Use the bundled installer script, not the one downloaded from the server
   tar -zxf vendor/OfflineHEPToolsInstaller.tar.gz -C ../
+  # Pythia moved its release archives; keep the bundled Pythia version.
+  sed -i 's|https://pythia.org/download/pythia83|https://pythia.org/releases/pythia83|g' \
+    ../HEPToolsInstallers/HEPToolInstaller.py
 	./bin/mg5_aMC ../mgconfigscript
+  # MG5 can report an installation error while returning a zero exit status.
+  if [ ! -f HEPTools/MG5aMC_PY8_interface/MG5aMC_PY8_interface.cc ] || \
+     [ ! -d HEPTools/pythia8/include/Pythia8Plugins ]; then
+    echo "ERROR: Pythia8/interface installation failed; check the MG5 installer output." >&2
+    exit 1
+  fi
 
 if [ -n "${CMSSW_BASE}" ]; then
 	echo "f2py_compiler_py3 = f2py3" >> input/mg5_configuration.txt
