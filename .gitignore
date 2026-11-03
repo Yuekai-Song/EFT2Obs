@@ -37,3 +37,4 @@ test.py
 HEPToolsInstallers
 *log
 *.root
+.cache
