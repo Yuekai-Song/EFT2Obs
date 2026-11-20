@@ -29,6 +29,7 @@ parser.add_argument('--square', '-s', action='store_true')
 parser.add_argument('--cross', '-c', action='store_true')
 parser.add_argument('--to-scaling', '-t', default=False, action='store_true')
 parser.add_argument('--title', type=str, default='')
+parser.add_argument('--pta-bins', '-p', type=str, nargs='+', default=['200', '300', '400', '500', '600', '700', '800', '1000'])
 parser.add_argument('--bin-labels', default='WGQQ/bin_labels.json', help="json file to translate bin labels")
 parser.add_argument('--rebin', default=None, help="Comma separated list of new bin edges")
 parser.add_argument('--overflow', action='store_true', default=False)
@@ -38,7 +39,7 @@ args = parser.parse_args()
 dir = os.path.join("./WGQQ", args.dir)
 cfg = os.path.join('./cards', 'WGQQ', 'config.json')
 var = args.var
-pta_bins = ['200', '400', '600', '800', '1000']
+pta_bins = args.pta_bins
 if 'inclusive' in dir or args.dir == "ptg400":
     yoda_file = os.path.join(dir, "Rivet.yoda")
     yoda_files = []

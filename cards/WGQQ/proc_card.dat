@@ -1,4 +1,4 @@
-import model SMEFTsim_topU3l_MwScheme_UFO-massless_cW
+import model SMEFTsim_topU3l_MwScheme_propagatorhack_UFO-massless_cW
 
 define ww = w+ w-
 

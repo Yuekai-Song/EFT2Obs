@@ -102,7 +102,8 @@ void WGQQ::WGammaRivetVariables::resetVars() {
 
 void WGQQ::init() {
   pta_bins_.clear();
-  for (double x = 200; x <= 1200; x += 50) {
+  pta_bins_ = {200, 230};
+  for (double x = 250; x <= 1200; x += 50) {
     pta_bins_.push_back(x);
   }
   pta_bins_.push_back(2000);
@@ -214,6 +215,7 @@ void WGQQ::analyze(const Event &event) {
         if (!flag_subjet) {
           SD_subjets = sdsubjets;
           fjet = fj;
+          vars_.fj_MSD = SD_fjet.m();
           flag_subjet = true;
         }
         // Check if the subjet is matched to the quark
@@ -251,7 +253,7 @@ void WGQQ::analyze(const Event &event) {
       // Now calculate EFT phi observables
       auto wg_system = WGSystem(momentum(SD_subjets[0]), momentum(SD_subjets[1]), p0.momentum(), false);
       vars_.phi_sjet = wg_system.Phi();
-      _h["fjet_sdmass"]->fill(SD_fjet.m() / GeV);
+      _h["fjet_sdmass"]->fill(vars_.fj_MSD / GeV);
       _h["phi_sjet"]->fill(vars_.phi_sjet);
       _h["wp_mass"]->fill(vars_.wg_M / GeV);
       _h["fjet_pt"]->fill(vars_.fj_pt / GeV);
