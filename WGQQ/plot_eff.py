@@ -6,8 +6,11 @@ import ROOT
 import glob
 import sys
 import os
-os.chdir('/grid_mnt/data__data.polcms/cms/song/CMSSW_16_0_0/src/EFT2Obs')
-sys.path.append(os.path.join('.', 'scripts'))
+from pathlib import Path
+from storage import output_directory
+repo_dir = Path(__file__).resolve().parent.parent
+os.chdir(repo_dir)
+sys.path.insert(0, str(repo_dir / 'scripts'))
 
 import plotting as plot
 from array import array
@@ -23,7 +26,7 @@ parser.add_argument('var', type=str, default='sjet_phi',
 parser.add_argument('--browser', '-b', action='store_true')
 args = parser.parse_args()
 
-dir = os.path.join("./WGQQ", args.dir)
+dir = os.path.join(output_directory(), args.dir)
 var = args.var
 json1 = os.path.join(dir, 'WGQQ_' + var + '.json')
 json2 = os.path.join(dir, 'WGQQ_' + var + '_matched.json')

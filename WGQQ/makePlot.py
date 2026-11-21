@@ -2,6 +2,8 @@ import subprocess
 import argparse
 import os
 import glob
+from pathlib import Path
+from storage import output_directory
 
 def merge(dir):
     yoda_file = os.path.join(dir, "Rivet.yoda")
@@ -10,7 +12,7 @@ def merge(dir):
         subprocess.check_call(['yodamerge', '-o', yoda_file] + yoda_files)
     return yoda_file
 
-os.chdir('/grid_mnt/data__data.polcms/cms/song/CMSSW_16_0_0/src/EFT2Obs')
+os.chdir(Path(__file__).resolve().parent.parent)
 x_titles = {'p_pt': 'p_{T}(\\gamma) [GeV]', 'ptg': 'p_{T}(\\gamma) [GeV]', 'ptg_ajet': 'p_{T}(\\gamma) [GeV]', 'phi_sjet': '\\phi', 'phi_quark': '\\phi_{quark}', 
             'phi_sjet_matched': '\\phi', 'phi_quark_matched': '\\phi_{quark}', 'phi_sjet_noajet': '\\phi', 'phi_sjet_ajet': '\\phi',
             'w_pt_matched': 'p_{T}(W) [GeV]', 'w_pt': 'p_{T}(W) [GeV]', 'wp_mass': 'M_{W\\gamma} [GeV]'}
@@ -29,14 +31,15 @@ parser.add_argument('--square', '-s', action='store_true')
 parser.add_argument('--cross', '-c', action='store_true')
 parser.add_argument('--to-scaling', '-t', default=False, action='store_true')
 parser.add_argument('--title', type=str, default='')
-parser.add_argument('--pta-bins', '-p', type=str, nargs='+', default=['200', '300', '400', '500', '600', '700', '800', '1000'])
+parser.add_argument('--pta-bins', '-p', type=str, nargs='+', default=['200', '250', '300', '400', '500', '600', '700', '800', '1000'])
 parser.add_argument('--bin-labels', default='WGQQ/bin_labels.json', help="json file to translate bin labels")
 parser.add_argument('--rebin', default=None, help="Comma separated list of new bin edges")
 parser.add_argument('--overflow', action='store_true', default=False)
 
 args = parser.parse_args()
 
-dir = os.path.join("./WGQQ", args.dir)
+output_dir = output_directory()
+dir = os.path.join(output_dir, args.dir)
 cfg = os.path.join('./cards', 'WGQQ', 'config.json')
 var = args.var
 pta_bins = args.pta_bins
@@ -47,9 +50,9 @@ if 'inclusive' in dir or args.dir == "ptg400":
         subprocess.check_call(['mkdir', '-p', dir])
         for i in range(len(pta_bins)):
             if i < len(pta_bins) - 1:
-                subdir = os.path.join("./WGQQ", os.path.dirname(args.dir), 'ptg' + pta_bins[i] + 'to' + pta_bins[i + 1])
+                subdir = os.path.join(output_dir, os.path.dirname(args.dir), 'ptg' + pta_bins[i] + 'to' + pta_bins[i + 1])
             else:
-                subdir = os.path.join("./WGQQ", os.path.dirname(args.dir), 'ptg' + pta_bins[i])
+                subdir = os.path.join(output_dir, os.path.dirname(args.dir), 'ptg' + pta_bins[i])
             print(subdir)
             yoda_files.append(merge(subdir))
         subprocess.check_call(['yodastack', '-o', yoda_file] + yoda_files)
@@ -59,7 +62,7 @@ else:
 rivet = 'WGQQ'
 if args.to_scaling:
     cmds = ['python3', 'scripts/get_scaling.py', '-c', cfg, '-i', yoda_file, '--hist', '/' + rivet + '/' +
-                      var, '--save', 'json,txt,tex', '--translate-tex', 'resources/translate_tex.json', '--bin-labels', args.bin_labels, '--dir', dir, '--differential']
+                      var, '--save', 'json', '--translate-tex', 'resources/translate_tex.json', '--bin-labels', args.bin_labels, '--dir', dir, '--differential']
     if args.overflow:
         cmds.append('--overflow')
     if args.rebin:
@@ -94,4 +97,4 @@ else:
         subprocess.check_call(['cp', os.path.join(
             dir, rivet + '_' + var + '.pdf'), os.path.join('plots_browser/', args.dir)])
         plots = glob.glob(os.path.join(dir, 'WGQQ_' + var + '.p*'))
-        subprocess.check_call(['cp'] + plots + [os.path.join('plots_browser/', dir)])
+        subprocess.check_call(['cp'] + plots + [os.path.join('plots_browser/', args.dir)])

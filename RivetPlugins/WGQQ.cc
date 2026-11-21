@@ -102,8 +102,8 @@ void WGQQ::WGammaRivetVariables::resetVars() {
 
 void WGQQ::init() {
   pta_bins_.clear();
-  pta_bins_ = {200, 230};
-  for (double x = 250; x <= 1200; x += 50) {
+  pta_bins_ = {200, 210, 230, 250, 300, 350};
+  for (double x = 400; x <= 1200; x += 100) {
     pta_bins_.push_back(x);
   }
   pta_bins_.push_back(2000);

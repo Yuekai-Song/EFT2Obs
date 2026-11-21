@@ -1,10 +1,15 @@
 from builtins import range
 import sys
-sys.path.append('./scripts')
-from jobs import Jobs
 import argparse
 import os
-os.chdir('/grid_mnt/data__data.polcms/cms/song/CMSSW_16_0_0/src/EFT2Obs')
+from pathlib import Path
+
+repo_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(repo_dir / 'scripts'))
+from jobs import Jobs
+
+os.chdir(repo_dir)
+os.environ['PWD'] = str(repo_dir)  # Used by the job script generator.
 
 job_mgr = Jobs()
 parser = argparse.ArgumentParser()
@@ -18,8 +23,9 @@ job_mgr.set_args(args)
 if args.step == 'make':
     job_mgr.job_mode = 'condor'
     job_mgr.task_name = 'divide'
-    job_mgr.task_dir = 'jobs'
-    job_mgr.bopts = 'request_cpus=32\nT3Queue = long\ngetenv = False\nWNTag=el9\n+SingularityCmd = ""\ninclude : /opt/exp_soft/cms/t3_tst/t3queue |'
+    job_mgr.task_dir = 'jobs/make'
+    job_mgr.bopts = 'request_cpus=8\n+MaxRuntime = 28800\ngetenv = False\nuse_x509userproxy = True\nshould_transfer_files = NO'
+    os.makedirs(job_mgr.task_dir, exist_ok=True)
 else:
     job_mgr.job_mode = 'interactive'
     job_mgr.task_name = 'run'

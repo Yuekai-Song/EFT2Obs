@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
+eftobs_env_cwd=${PWD}
+eftobs_env_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 export SCRAM_ARCH=el9_amd64_gcc12
-cwd=${PWD}
-cd /grid_mnt/data__data.polcms/cms/song/CMSSW_16_0_0/src/
+# EFT2Obs is checked out directly under the CMSSW src directory.
+cd "${eftobs_env_dir}/.." || return 1
 eval `scramv1 runtime -sh`
 
-cd /grid_mnt/data__data.polcms/cms/song/CMSSW_16_0_0/src/EFT2Obs
+cd "${eftobs_env_dir}" || return 1
 export EFTOBS_LOCAL_LHAPDF=1
 export LHAPDF_CONFIG_PATH="${PWD}/lhapdf/bin/lhapdf-config"
 export PYTHONPATH="${PWD}/$(echo lhapdf/lib64/python*/site-packages):${PYTHONPATH}"
@@ -27,5 +29,6 @@ fi
 if [[ ! -z "$PYTHIA8DATA" ]]; then
         export PYTHIA8DATA=""
 fi
-cd $cwd
+cd "${eftobs_env_cwd}" || return 1
+unset eftobs_env_cwd eftobs_env_dir
 #[[ ":$PYTHONPATH:" != *":$PWD/${MG_DIR}:"* ]] && PYTHONPATH="$PWD/${MG_DIR}:${PYTHONPATH}"

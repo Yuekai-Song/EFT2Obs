@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-cd /grid_mnt/data__data.polcms/cms/song/CMSSW_16_0_0/src/EFT2Obs
+set -e
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source env.sh
+WGQQ_OUTPUT_DIR=$(python3 WGQQ/storage.py)
 pta_min=$1
 pta_max=$2
 
@@ -11,7 +14,10 @@ else
     name="ptg${pta_min%.*}to${pta_max%.*}"
 fi
 PROCESS=WGQQ-${name}
-GRID_DIR=WGQQ/${name}
+GRID_DIR=${WGQQ_OUTPUT_DIR}/${name}
+# Preserve existing YODA files when rebuilding the gridpack.
+mkdir -p "${GRID_DIR}"
+rm -f "${GRID_DIR}"/gridpack.tar.gz
 
 if [[ -d "${MG_DIR}/${PROCESS}" ]]; then
     echo "Directory ${MG_DIR}/${PROCESS} already exists. Remove it!"
@@ -37,11 +43,6 @@ python3 scripts/make_config.py -p ${PROCESS} -o cards/${PROCESS}/config.json \
 python3 scripts/make_param_card.py -p ${PROCESS} -c cards/${PROCESS}/config.json -o cards/${PROCESS}/param_card.dat
 
 python3 scripts/make_reweight_card.py cards/${PROCESS}/config.json cards/${PROCESS}/reweight_card.dat --prepend "change helicity false"
-
-if [[ -d "${GRID_DIR}" ]]; then
-    echo "Directory of gridpack ${GRID_DIR} already exists. Remove it!"
-    rm -r ${GRID_DIR}
-fi
 
 ./scripts/make_gridpack.sh ${PROCESS} 0 0 ${GRID_DIR}
 rm -r ${MG_DIR}/${PROCESS}
