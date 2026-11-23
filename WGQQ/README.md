@@ -1,14 +1,15 @@
-# WGQQ output on EOS
+# WGQQ output directory
 
 Run the scripts from the EFT2Obs directory. Gridpacks, YODA files, merged
-histograms, and scaling outputs use `WGQQ/output`, a symlink to EOS:
+histograms, and scaling outputs use `WGQQ/output`. When running on lxplus
+from an AFS checkout, set up `WGQQ/output` as a symlink to EOS:
 
 ```bash
 ln -s /eos/user/y/yuekai/WGQQ/EFT WGQQ/output
 ```
 
-The EOS directory must already exist. The link has been created in this checkout
-and is ignored by Git. The scripts stop if the link is missing or inaccessible.
+The EOS directory must already exist. For other setups, an existing local
+`WGQQ/output` directory also works. Git ignores `WGQQ/output`.
 `storage.py` provides this shared check: Python scripts import it, and Bash
 scripts run it with `python3 WGQQ/storage.py` to get the output path.
 

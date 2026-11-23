@@ -23,7 +23,7 @@ if len(pt_edges) < 2 or not all(math.isfinite(edge) for edge in pt_edges) or any
 os.chdir(Path(__file__).resolve().parent.parent)
 output_dir = Path(output_directory())
 bin_tag = '_'.join(format(edge, 'g') for edge in pt_edges)
-scaling_dir = output_dir / (args.output or 'scaling_' + bin_tag)
+scaling_dir = output_dir / (args.output or 'scaling/' + bin_tag)
 inclusive_dir = output_dir / 'inclusive'
 
 n_phi_bins = 10

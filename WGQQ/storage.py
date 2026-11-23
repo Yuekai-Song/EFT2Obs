@@ -1,14 +1,18 @@
 from pathlib import Path
 import os
+import socket
 import sys
 
 
 def output_directory():
     directory = Path(__file__).resolve().parent / 'output'
-    if not directory.is_symlink() or not directory.is_dir():
+    on_lxplus_afs = Path('/afs') in directory.parents and socket.gethostname().startswith('lxplus')
+    if on_lxplus_afs and not directory.is_symlink():
         raise RuntimeError(
             '{} must be a symlink to an accessible EOS directory'.format(directory)
         )
+    if not directory.is_dir():
+        raise RuntimeError('{} must be an accessible directory'.format(directory))
     return str(directory)
 
 
